@@ -210,7 +210,7 @@ function deployeaswebsite(){
         CDN_FILE_NAME="$CDN_FILE_DIR/$FILE_MD5"
         if [ ! -d "$CDN_FILE_DIR" ] ; then
             #路径不存在则创建， -t 测试模式除外
-            if [ "$EST" != "1" ] ; then 
+            if [ "$TEST" != "1" ] ; then 
                 mkdir -p "$CDN_FILE_DIR" 
             fi
         fi
