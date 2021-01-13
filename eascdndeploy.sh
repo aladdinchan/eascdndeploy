@@ -184,8 +184,8 @@ function deployeaswebsite(){
     #截掉最后多出了的 ||
     FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::-2}"
 
-    #过滤出需要部署的文件类型并合并重复的文件
-    MERGED_FILES=`echo "$JNLP_FILES $RESOURCELST_FILES" | awk "$FILENAME_FILTER_AWK" | sort | uniq`
+    #过滤出需要部署的文件类型并合并重复的文件。若没有中间的\n，会导致JNLP_FILES的最后一行和RESOURCELST_FILES的第一行合并，影响结果。
+    MERGED_FILES=`echo -e "$JNLP_FILES\n$RESOURCELST_FILES" | awk "$FILENAME_FILTER_AWK" | sort | uniq`
     
     #生成需要部署的文件名数组以及对应的MD5数组
     CLIENTFILES_NAME=($(echo "$MERGED_FILES" | awk '{print $1}'))
