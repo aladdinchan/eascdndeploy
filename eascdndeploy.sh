@@ -316,11 +316,12 @@ if [ "$CMD_MD5SUM" = "" ] ; then
 fi
 
 #计数器：处理文件总数，已部署数量，本次部署数量，失败数量。
-#如下几个变量会在部署函数中初始化值和更新
-COUNT_FILES_PROCESSED=0
-COUNT_FILES_DEPLOYED=0
-COUNT_FILES_TODEPLOY=0
-COUNT_FILES_FAILED=0
+#如下几个变量用于统计多个部署任务的汇总信息。
+COUNT_FILES_PROCESSED_TOTAL=0
+COUNT_FILES_DEPLOYED_TOTAL=0
+COUNT_FILES_TODEPLOY_TOTAL=0
+COUNT_FILES_FAILED_TOTAL=0
+COUNT_TASKS_RAN=0
 
 #对每个参数分别进行检查，确定参数种类并执行对应部署逻辑。
 for ARG in ${ARGS[@]} 
