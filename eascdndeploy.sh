@@ -165,7 +165,7 @@ function deployeaswebsite(){
     fi
 
     #从eas.jnlp解析出需要部署的文件及MD5
-    JNLP_FILES=$(curl -s $EAS_WEBSITE/easupdater/eas.jnlp |
+    JNLP_FILES=$(curl -s -L $EAS_WEBSITE/easupdater/eas.jnlp |
     sed 's/\(<jar\)/\
     \1/g; s/\(<nativelib\)/\
     \1/g' |
@@ -173,7 +173,7 @@ function deployeaswebsite(){
     sed "s/\(.*\)href='\(.*\)'\(.*\)md5Version=\"\([^\"]*\)\"\(.*\)/\2\t\4/g")
 
     #从resource.lst解析出需要部署的文件及MD5
-    RESOURCELST_FILES=$(curl -s $EAS_WEBSITE/easupdater/resource.lst |
+    RESOURCELST_FILES=$(curl -s -L $EAS_WEBSITE/easupdater/resource.lst |
     sed 's/\(<jar\)/\
     \1/g' |
     awk '/<jar/' |
@@ -226,7 +226,7 @@ function deployeaswebsite(){
         else
             #未部署过的新文件，需要从EAS服务器下载并部署
             echo -n "File \"$FILE_NAME\" is new, downloading ... "
-            curl -s -o $CDN_FILE_NAME $EAS_WEBSITE/easWebClient/$FILE_NAME
+            curl -s -L -o $CDN_FILE_NAME $EAS_WEBSITE/easWebClient/$FILE_NAME
             if [ $? -eq 0 ] ; then
                 #文件下载成功
                 echo -n -e "finished. "
