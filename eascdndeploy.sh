@@ -239,7 +239,7 @@ function deployeaswebsite(){
                     #校验部署的文件MD5值，如果不正确，则删除。
                     MD5_VALUE="$($CMD_MD5SUM $CDN_FILE_NAME | awk '{print $1}')"
                     if [ "$MD5_VALUE" = "$FILE_MD5" ] ; then
-                        let COUNT_FILES_DEPLOYED++
+                        let COUNT_FILES_TODEPLOY++
                         echo -e "\e[92mdeployed. \e[0m"
                     else
                         let COUNT_FILES_FAILED++
