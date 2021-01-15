@@ -54,7 +54,13 @@ function deploypatchfile(){
     fi
 
     #在当前目录创建一个临时目录，用于解压缩补丁文件
-    TEMP_DIR="$(mktemp -d -p `pwd` tmp.cdn.XXXXXXXXXX)"
+    TEMP_DIR="$(mktemp -d -p . tmp.cdn.XXXXXXXXXX)"
+    if [[ "$TEMP_DIR" = "" || ! -d "$TEMP_DIR" ]] ; then
+        #临时目录创建异常
+        echo -e "\e[91mCan not create temporary directory, aborted.\e[0m\n"
+        return
+    fi
+
     echo "Unzip $EAS_PATCHFILE to $TEMP_DIR/patchfiles ..."
     if [ "$VERBOSE" != "1" ] ; then
         #开启静默解压
@@ -72,7 +78,7 @@ function deploypatchfile(){
     #删除临时目录
     if [[ "$TEMP_DIR" == *tmp.cdn* ]] ; then 
         #增加目录名判断的目的是为了避免理论上应该不会出现的误删，rm -rf会静默删除整个目录
-        rm -rf $TEMP_DIR
+        rm -rf "$TEMP_DIR"
     fi
 }
 
@@ -288,20 +294,18 @@ done
 if [ "$CDN_ROOTDIR" = "" ] ; then
     usage
     exit 1
-else
-    if [ ! -d "$CDN_ROOTDIR/easwebcache" ] ; then
-        echo -e "Error : EAS CDN directory \"$CDN_ROOTDIR/easwebcache\" not exist. \n"
-        exit 1
-    fi
+elif [[ "$CDN_ROOTDIR" =~ [[:space:]] ]] ; then
+    #目录名不能包含空格
+    echo -e "\e[91mError: CDN root directory \"$CDN_ROOTDIR\" must not include space characters.\e[0m\n"
+    exit 1
+elif [ ! -d "$CDN_ROOTDIR/easwebcache" ] ; then
+    echo -e "\e[91mError: EAS CDN directory \"$CDN_ROOTDIR/easwebcache\" not exist.\e[0m\n"
+    exit 1
 fi
 if [ "$FILETYPES" = "" ] ; then
     #缺省部署的文件类型
     FILETYPES="jar,exe,dll"
 fi
-
-#选项后面是参数，读入到数组中
-shift $((OPTIND-1))
-ARGS=($@)
 
 #查找可以计算MD5 hash的命令，如果找不到，退出程序。
 CMD_MD5SUM="$(which md5sum)"
@@ -323,9 +327,27 @@ COUNT_FILES_TODEPLOY_TOTAL=0
 COUNT_FILES_FAILED_TOTAL=0
 COUNT_TASKS_RAN=0
 
+#移动到选项后面的参数
+shift $((OPTIND-1))
+
+#输出参数信息
+echo -e "CDN root directory: \"$CDN_ROOTDIR\". \nFile type(s): \"$FILETYPES\""
+if [ "$TEST" = "1" ] ; then echo -e "Test mode." ; fi
+if [ "$VERBOSE" = "1" ] ; then echo -e "Verbose output." ; fi
+echo -e "Argument(s): \"$*\"\n"
+
 #对每个参数分别进行检查，确定参数种类并执行对应部署逻辑。
-for ARG in ${ARGS[@]} 
-do
+while [ "$1" != "" ] ; do
+    ARG="$1"
+    
+    if [[ "$ARG" =~ [[:space:]] ]] ; then
+        #参数不能包含空格
+        echo "Deploy from : $ARG ..."
+        echo -e "\e[91mError: File, directory and url must not include space characters. skipped.\e[0m\n"
+        shift
+        continue
+    fi
+
     #如下几个变量会在部署函数中改变，如果某个参数异常导致任务没有被执行，下面的变量值会是上一个成功任务的值。
     #如果不在此处重置，可能会导致双计上次成功执行的任务。
     COUNT_FILES_PROCESSED=0
@@ -333,28 +355,28 @@ do
     COUNT_FILES_TODEPLOY=0
     COUNT_FILES_FAILED=0
 
-    #参数是目录，将被认定为EAS home目录.
     if [ -d "$ARG" ] ; then
+        #参数是目录，将被认定为EAS home目录.
         #从EAS目录搜索客户端文件并部署到CDN路径
         echo "Deploy from eas directory : $ARG ..."
         deploydirectory "$ARG/eas/server/deploy/fileserver.ear/easWebClient"
         let COUNT_TASKS_RAN++
-    fi
-
-    #参数是文件，将被认定为EAS补丁文件.
-    if [ -f "$ARG" ] ; then
+    elif [ -f "$ARG" ] ; then
+        #参数是文件，将被认定为EAS补丁文件.
         #从EAS补丁文件中提取客户端文件并部署到CDN路径
         echo "Deploy from eas patch file : $ARG ..."
         deploypatchfile "$ARG"
         let COUNT_TASKS_RAN++
-    fi
-
-    #参数是URL，将被认定为EAS网站.
-    if [[ "$ARG" == http://* ||  "$ARG" == https://* ]] ; then
+    elif [[ "$ARG" == http://* ||  "$ARG" == https://* ]] ; then
+        #参数是URL，将被认定为EAS网站.
         #从EAS网站获取文件并部署到CDN路径
         echo "Deploy from eas website : $ARG ..."
         deployeaswebsite "$ARG"
         let COUNT_TASKS_RAN++
+    else
+        #参数不正确，任务未执行
+        echo "Deploy from : $ARG ..."
+        echo -e "\e[91m\"$ARG\" is none of .zip file, EAS home directory or EAS web site. skipped.\e[0m\n"
     fi
 
     #汇总计数器
@@ -362,11 +384,14 @@ do
     let COUNT_FILES_DEPLOYED_TOTAL+=COUNT_FILES_DEPLOYED
     let COUNT_FILES_TODEPLOY_TOTAL+=COUNT_FILES_TODEPLOY
     let COUNT_FILES_FAILED_TOTAL+=COUNT_FILES_FAILED
+
+    #处理下一个参数
+    shift
 done
 
 if [ $COUNT_TASKS_RAN -eq 0 ] ; then
     #没有一个部署任务被执行，参数不正确
-    usage
+    echo -e "\e[91mNo deployment tasks have been performed, please check the argument(s).\e[0m\n"
     exit 1
 elif  [ $COUNT_TASKS_RAN -ge 2 ] ; then
     #执行的任务数有2个或以上时，才需要汇总统计。
