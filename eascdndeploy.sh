@@ -33,7 +33,7 @@ md5sum or openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, r
 
 Options:
   -c DIR    CDN root directory.  It must has easwebcache subdirectory.
-  -f TYPES  File types to deploy, default: jar,exe,dll, '*' for all types.
+  -f TYPES  File types to deploy, comma separated. default is '*' for all types.
   -t        Test deploy and exit.
   -v        Verbose output.
   -h        Display help and exit.
@@ -321,7 +321,7 @@ elif [ ! -d "$CDN_ROOTDIR/easwebcache" ] ; then
 fi
 if [ "$FILETYPES" = "" ] ; then
     #缺省部署的文件类型
-    FILETYPES="jar,exe,dll"
+    FILETYPES="*"
 fi
 
 #查找可以计算MD5 hash的命令，如果找不到，退出程序。
