@@ -78,6 +78,10 @@ function deploypatchfile(){
         UNZIP_QUIET="-q"
     fi
     unzip $UNZIP_QUIET -d $TEMP_DIR/patchfiles $EAS_PATCHFILE Server/server/deploy/fileserver.ear/easWebClient/*
+    if [[ $? -ne 0 && $? -ne 11 ]] ; then
+        #解压缩失败。 11表示没有找到匹配的文件
+        echo -e "\e[91mUnzip $EAS_PATCHFILE error. \e[0m"
+    fi
 
     #部署解压的临时目录中的EAS客户端文件
     if [ -d "$TEMP_DIR/patchfiles/Server/server/deploy/fileserver.ear/easWebClient" ] ; then
