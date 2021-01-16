@@ -1,7 +1,21 @@
 # EAS客户端文件CDN部署脚本
 提取EAS补丁文件、EAS服务器目录、以及EAS网站中的客户端文件，并按照EAS CDN更新所约定的目录及文件格式部署到指定目录。可将部署目录直接发布为CDN源站，或者同步到外部CDN网站上。支持一次传多个参数。<br/>
 <br/>
-在CentOS 7中验证通过。<br/>
+
+## 环境要求
+要求BASH 4+版本，并依赖若干命令和工具，参见后面的说明。<br/>
+在CentOS 6/7/8，macOS 11.1中验证通过。<br/>
+<br/>
+macOS自带的bash版本如果较低，可通过`brew`安装新版本：<br/>
+```bash
+#安装brew包管理工具
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+#安装最新版本的bash
+brew install bash
+
+#用新版本bash执行脚本
+/usr/local/bin/bash ./eascdndeoploy.sh ...
+```
 <br/>
 
 ## 用法及参数

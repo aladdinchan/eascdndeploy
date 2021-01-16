@@ -1,7 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #CDN deploy script for EAS client files.
 #Author : CHEN JUN
 #Date : 2021-01-10
+
+#只支持在bash 4+环境中运行
+if [[ ! -n $BASH ]] ; then
+    echo "This script requires BASH. "
+    echo 
+    exit 1
+elif [[ ${BASH_VERSINFO[0]} -lt 4 ]] ; then
+    echo "This script requires BASH version 4+, your version is $BASH_VERSION."
+    echo
+    exit 1
+fi
 
 #帮助信息
 function usage(){
@@ -53,8 +64,8 @@ function deploypatchfile(){
         return
     fi
 
-    #在当前目录创建一个临时目录，用于解压缩补丁文件
-    TEMP_DIR="$(mktemp -d -p . tmp.cdn.XXXXXXXXXX)"
+    #在当前目录创建一个临时目录，用于解压缩补丁文件。 macOS下的mktemp不支持 -p参数。
+    TEMP_DIR="$(mktemp -d tmp.cdn.XXXXXXXXXX)"
     if [[ "$TEMP_DIR" = "" || ! -d "$TEMP_DIR" ]] ; then
         #临时目录创建异常
         echo -e "\e[91mCan not create temporary directory, aborted.\e[0m\n"
@@ -102,8 +113,8 @@ function deploydirectory(){
     
     #生成文件名过滤参数形如: /\.jar/ && /\.exe/ && /\.dll/
     FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n ' /\.{}$/ ||')
-    #截掉最后多出的 ||
-    FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::-2}"
+    #截掉最后多出的 || 注：bash 4.1.x不支持这样的语法："${FILENAME_FILTER_AWK::-2}"
+    FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::${#FILENAME_FILTER_AWK}-2}"
 
     #查找指定扩展名的文件，生成需要部署的文件名数组。如果用$()方式执行会出错，加\转义也不行。
     CLIENTFILES_NAME=`find $SEARCH_PATHS -type f | awk "$FILENAME_FILTER_AWK"`
@@ -185,17 +196,17 @@ function deployeaswebsite(){
     awk '/<jar/' |
     sed "s/\(.*\)href='\(.*\)'\(.*\)md5Version=\"\([^\"]*\)\"\(.*\)/\2\t\4/g")
 
-    #生成文件名过滤参数形如: /\.jar\s/ && /\.exe\s/ && /\.dll\s/
-    FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n ' /\.{}\s/ ||')
-    #截掉最后多出了的 ||
-    FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::-2}"
+    #生成文件名过滤参数形如: /\.jar[[:space:]]/ && /\.exe[[:space:]]/ && /\.dll[[:space:]]/。 注：awk 3.x不支持\s匹配空白字符
+    FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n ' /\.{}[[:space:]]/ ||')
+    #截掉最后多出了的 || 。 注：bash 4.1.x不支持这样的语法："${FILENAME_FILTER_AWK::-2}"
+    FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::${#FILENAME_FILTER_AWK}-2}"
 
     #过滤出需要部署的文件类型并合并重复的文件。若没有中间的\n，会导致JNLP_FILES的最后一行和RESOURCELST_FILES的第一行合并，影响结果。
     MERGED_FILES=`echo -e "$JNLP_FILES\n$RESOURCELST_FILES" | awk "$FILENAME_FILTER_AWK" | sort | uniq`
     
     #生成需要部署的文件名数组以及对应的MD5数组
-    CLIENTFILES_NAME=($(echo "$MERGED_FILES" | awk '{print $1}'))
-    CLIENTFILES_MD5=($(echo "$MERGED_FILES" | awk '{print $2}'))
+    CLIENTFILES_NAME=($(echo -e "$MERGED_FILES" | awk '{print $1}'))
+    CLIENTFILES_MD5=($(echo -e "$MERGED_FILES" | awk '{print $2}'))
 
     #计数器：处理文件总数，已部署数量，本次部署数量，失败数量。
     COUNT_FILES_PROCESSED=${#CLIENTFILES_NAME[@]}
