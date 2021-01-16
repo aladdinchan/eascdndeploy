@@ -2,9 +2,18 @@
 提取EAS补丁文件、EAS服务器目录、以及EAS网站中的客户端文件，并按照EAS CDN更新所约定的目录及文件格式部署到指定目录。可将部署目录直接发布为CDN源站，或者同步到外部CDN网站上。支持一次传多个参数。<br/>
 <br/>
 
+## 安装和运行
+```bash
+curl -sOL https://raw.githubusercontent.com/aladdinchan/eascdndeploy/main/eascdndeploy.sh
+chmod +x eascdndeploy.sh
+
+./eascdndeoploy.sh ...
+```
+<br/>
+
 ## 环境要求
 要求BASH 4+版本，并依赖若干命令和工具，参见后面的说明。<br/>
-在CentOS 6/7/8，macOS 11.1中验证通过。<br/>
+在CentOS 6/7/8、macOS 11.1中验证通过。<br/>
 <br/>
 macOS自带的bash版本如果较低，可通过`brew`安装新版本：<br/>
 ```bash
@@ -23,6 +32,7 @@ brew install bash
 <br/>
 这个脚本会用到如下命令或工具，如果缺少将不能正常工作。<br/>
 md5sum 或 openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, rm, cp 等。<br/>
+Linux：需要GNU awk 3+ 版本。<br/>
 |选项|说明|
 |:----|:--------|
 |-c DIR|CDN根目录。其必须有easwebcache子目录，文件将部署到该子目录下。|
