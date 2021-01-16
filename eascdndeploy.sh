@@ -111,7 +111,7 @@ function deploydirectory(){
     if [ -d "$EAS_CLIENTDIR/lib" ] ; then SEARCH_PATHS="$SEARCH_PATHS $EAS_CLIENTDIR/lib" ; fi
     if [ -d "$EAS_CLIENTDIR/metas" ] ; then SEARCH_PATHS="$SEARCH_PATHS $EAS_CLIENTDIR/metas" ; fi
     
-    #生成文件名过滤参数形如: /\.jar/ && /\.exe/ && /\.dll/
+    #生成文件名过滤参数形如: /\.jar$/ && /\.exe$/ && /\.dll$/。 必须以这些文件类型结尾。
     FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n ' /\.{}$/ ||')
     #截掉最后多出的 || 注：bash 4.1.x不支持这样的语法："${FILENAME_FILTER_AWK::-2}"
     FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::${#FILENAME_FILTER_AWK}-2}"
@@ -174,35 +174,37 @@ function deployeaswebsite(){
     EAS_WEBSITE="$1"
 
     #测试EAS网站能否正常访问.
+    echo -e "Testing eas web site: $EAS_WEBSITE ..."
     curl -s $EAS_WEBSITE/easupdater/JnlpVersion > /dev/null
-    if [ $? -ne 0 ]
-    then
-        echo -e "\e[91mCan not access eas web site : $EAS_WEBSITE.\e[0m\n"
+    if [ $? -ne 0 ] ; then
+        echo -e "\e[91mCan not access eas web site.\e[0m\n"
         return
     fi
 
+    #生成文件名过滤参数形如: /\.jar'[[:space:]]/ && /\.exe'[[:space:]]/ && /\.dll'[[:space:]]/。
+    FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n " /\.{}'[[:space:]]/ ||")
+    #截掉最后多出了的 || 。 注：bash 4.1.x不支持这样的语法："${FILENAME_FILTER_AWK::-2}"
+    FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::${#FILENAME_FILTER_AWK}-2}"
+
     #从eas.jnlp解析出需要部署的文件及MD5
+    echo -e "Downloading and processing the file: $EAS_WEBSITE/easupdater/eas.jnlp ..."
     JNLP_FILES=$(curl -s -L $EAS_WEBSITE/easupdater/eas.jnlp |
     sed 's/\(<jar\)/\
     \1/g; s/\(<nativelib\)/\
     \1/g' |
-    awk '(/<jar/ || /<nativelib/)' |
+    awk "( /<jar/ || /<nativelib/ ) && ( $FILENAME_FILTER_AWK )" |
     sed "s/\(.*\)href='\(.*\)'\(.*\)md5Version=\"\([^\"]*\)\"\(.*\)/\2\t\4/g")
 
     #从resource.lst解析出需要部署的文件及MD5
+    echo -e "Downloading and processing the file: $EAS_WEBSITE/easupdater/resource.lst ..."
     RESOURCELST_FILES=$(curl -s -L $EAS_WEBSITE/easupdater/resource.lst |
     sed 's/\(<jar\)/\
     \1/g' |
-    awk '/<jar/' |
+    awk "( /<jar/ ) && ( $FILENAME_FILTER_AWK )" |
     sed "s/\(.*\)href='\(.*\)'\(.*\)md5Version=\"\([^\"]*\)\"\(.*\)/\2\t\4/g")
 
-    #生成文件名过滤参数形如: /\.jar[[:space:]]/ && /\.exe[[:space:]]/ && /\.dll[[:space:]]/。 注：awk 3.x不支持\s匹配空白字符
-    FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n ' /\.{}[[:space:]]/ ||')
-    #截掉最后多出了的 || 。 注：bash 4.1.x不支持这样的语法："${FILENAME_FILTER_AWK::-2}"
-    FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::${#FILENAME_FILTER_AWK}-2}"
-
     #过滤出需要部署的文件类型并合并重复的文件。若没有中间的\n，会导致JNLP_FILES的最后一行和RESOURCELST_FILES的第一行合并，影响结果。
-    MERGED_FILES=`echo -e "$JNLP_FILES\n$RESOURCELST_FILES" | awk "$FILENAME_FILTER_AWK" | sort | uniq`
+    MERGED_FILES=`echo -e "$JNLP_FILES\n$RESOURCELST_FILES" | sort | uniq`
     
     #生成需要部署的文件名数组以及对应的MD5数组
     CLIENTFILES_NAME=($(echo -e "$MERGED_FILES" | awk '{print $1}'))
