@@ -4,7 +4,7 @@
 
 ## 安装和运行
 ```bash
-curl -sOL https://raw.githubusercontent.com/aladdinchan/eascdndeploy/main/eascdndeploy.sh
+curl -sSOL https://raw.githubusercontent.com/aladdinchan/eascdndeploy/main/eascdndeploy.sh
 chmod +x eascdndeploy.sh
 
 ./eascdndeoploy.sh ...
@@ -36,7 +36,7 @@ Linux：需要GNU awk 3+ 版本。<br/>
 |选项|说明|
 |:----|:--------|
 |-c DIR|CDN根目录。其必须有easwebcache子目录，文件将部署到该子目录下。|
-|-f TYPES|要部署的文件类型，默认为`jar,exe,dll`三种类型， '*' 则部署所有类型的文件。|
+|-f TYPES|要部署的文件类型，默认为`'*'`部署所有类型的文件。|
 |-t|测试模式。不实际部署文件，可用于检查会有多少文件将会部署。|
 |-v|输出详细信息。|
 |-h|显示命令帮助。|
@@ -98,7 +98,7 @@ Linux：需要GNU awk 3+ 版本。<br/>
 <br/>
 **filetypes**文件：在CDN_URL对应目录下必须有此文件，单行文本，内容为允许从该CDN网站更新的文件扩展名，用分号; 分隔。
 ```
-jar;exe;dll
+jar;exe;dll;bat;xml;zip;properties;vmoptions;js;css;png;jpg;ico;gif
 ```
 客户端在启用CDN更新后，会从CDN网站获取filetypes（地址形如`http://cdn.kingdee.com/easwebcache/filetypes`）并解析其中包含的文件类型。只有类型匹配的文件，才会从CDN网站下载。
 <br/>
