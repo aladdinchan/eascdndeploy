@@ -249,15 +249,16 @@ function deployeaswebsite(){
         else
             #未部署过的新文件，需要从EAS服务器下载并部署
             echo -n "File \"$FILE_NAME\" is new, downloading ... "
-            curl -s -L -o $CDN_FILE_NAME $EAS_WEBSITE/easWebClient/$FILE_NAME
+            CURL_RESULTS=$(curl -sS -L --write-out "%{time_total} %{http_code}" -o $CDN_FILE_NAME $EAS_WEBSITE/easWebClient/$FILE_NAME 2>&1)
             if [ $? -eq 0 ] ; then
                 #文件下载成功
-                echo -n -e "finished. "
+                CURL_INFOS=($CURL_RESULTS) #转换为数组
+                echo -n -e "finished, elapsed time: ${CURL_INFOS[0]}s. "
 
                 if [ ! -f $CDN_FILE_NAME ] ; then
                     #下载成功，文件却没有生成，通常是文件长度为0导致的。
                     let COUNT_FILES_FAILED++
-                    echo -e "\e[91mdeploy failed. may be a zero length file. \e[0m"
+                    echo -e "\e[91mdeploy failed with http code ${CURL_INFOS[1]}. may be a zero length file. \e[0m"
                 else
                     #校验部署的文件MD5值，如果不正确，则删除。
                     MD5_VALUE="$($CMD_MD5SUM $CDN_FILE_NAME | awk '{print $1}')"
@@ -272,7 +273,13 @@ function deployeaswebsite(){
                 fi
             else
                 let COUNT_FILES_FAILED++
-                echo -e "\e[91mfailed. \e[0m"
+                #执行异常时，$CURL_RESULTS会包含错误信息。 2>&1将错误重定向到STDOUT
+                #实际测试会输出两行，最后一行：%{time_total} %{http_code}
+                #curl: (7) Failed connect to eascloud.kingdee.com:80; 拒绝连接
+                #0.004 000
+                CURL_INFOS=($(echo -e "$CURL_RESULTS" | tail -n 1))
+                ERROR_MSG=$(echo -e "$CURL_RESULTS" | head -n 1)
+                echo -e "\e[91mfailed. $ERROR_MSG\e[0m, elapsed time: ${CURL_INFOS[0]}s."
                 #如果下载出错，文件很可能损坏，需要删除下载的文件，下次执行再重新部署即可
                 if [ -f $CDN_FILE_NAME ] ; then
                     rm -f $CDN_FILE_NAME
