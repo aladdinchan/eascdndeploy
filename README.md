@@ -43,21 +43,58 @@ Linux：需要GNU awk 3+ 版本。<br/>
 <br/>
 
 ## 示例
-1. 提取EAS补丁PT1000268.zip中的EAS客户端文件并部署到`/var/www/cdnroot`目录下的`easwebcache`子目录中。
+1. 提取EAS补丁PT1000268.zip中的EAS客户端文件并部署到`/home/eascdn`目录下的`easwebcache`子目录中。
 ```bash
-./eascdndeploy.sh -c /var/www/cdnroot PT1000268.zip
+./eascdndeploy.sh -c /home/eascdn PT1000268.zip
 ```
 2. 提取当前目录下所有PT开头的.zip中的EAS客户端文件并部署，-v 输出详细执行信息。
 ```bash
-./eascdndeploy.sh -v -c /var/www/cdnroot PT*.zip
+./eascdndeploy.sh -v -c /home/eascdn PT*.zip
 ```
 3. 提取EAS安装目录`/kingdee`中的客户端文件并测试是否需要部署，输出详细执行信息。
 ```bash
-./eascdndeploy.sh -vt -c /var/www/cdnroot /kingdee
+./eascdndeploy.sh -vt -c /home/eascdn /kingdee
 ```
 4. 提取EAS网站`https://abc.kdeascloud.com`中扩展名为`jar、exe、dll、zip`的客户端文件并部署。
 ```bash
-./eascdndeploy.sh -f jar,exe,dll,zip -c /var/www/cdnroot https://abc.kdeascloud.com
+./eascdndeploy.sh -f jar,exe,dll,zip -c /home/eascdn https://abc.kdeascloud.com
+```
+<br/>
+
+## 搭建CDN源站
+CDN源站只需要提供静态文件下载服务即可，功能简单，部署也很容易，下面以`nginx`为例，并将`/home/eascdn`路径作为CDN源站的根路径。
+### 1. 创建目录及`filetypes`文件
+```bash
+mkdir -p /home/eascdn/easwebcache
+echo "jar;exe;dll;bat;xml;zip;properties;vmoptions;js;css;png;jpg;ico;gif" > /home/eascdn/easwebcache/filetypes
+```
+<br/>
+
+### 2. 增加`nginx`配置文件，提供文件下载服务
+新建配置文件`/etc/nginx/conf.d/eascdn.conf`，并添加如下配置信息。
+```conf
+server {
+    listen       80;
+    server_name  cdn-src.kdeascloud.com;   # 请替换为实际使用的域名
+
+    # 路径：/home/eascdn/easwebcache
+    location /easwebcache {
+        root /home/eascdn;
+        autoindex on;  # 若不希望浏览器可遍历文件，删除此行
+        charset utf-8;
+    }
+}
+```
+重启`nginx`服务，让配置生效。<br/>
+`service nginx restart`<br/>
+<br/>
+
+### 3. 安装脚本及日常部署
+安装方法见：[安装和运行](#安装和运行) ，部署示例见：[示例](#示例)。
+假定安装到`/home/eascdn`路径下，部署EAS网站`https://abc.kdeascloud.com`中的客户端文件命令如下。
+```bash
+cd /home/eascdn
+./eascdndeploy.sh -c . http://abc.kdeascloud.com
 ```
 <br/>
 
@@ -96,9 +133,9 @@ Linux：需要GNU awk 3+ 版本。<br/>
 <br/>
 如此设计的好处是支持单个文件的多版本并存，且每个文件的内容永远不会变化，不存在CDN缓存刷新问题。<br/>
 <br/>
-**filetypes**文件：在CDN_URL对应目录下必须有此文件，单行文本，内容为允许从该CDN网站更新的文件扩展名，用分号; 分隔。
+`filetypes`文件：在CDN_URL对应目录下必须有此文件，单行文本，内容为允许从该CDN网站更新的文件扩展名，用分号; 分隔。
 ```
 jar;exe;dll;bat;xml;zip;properties;vmoptions;js;css;png;jpg;ico;gif
 ```
-客户端在启用CDN更新后，会从CDN网站获取filetypes（地址形如`http://cdn.kingdee.com/easwebcache/filetypes`）并解析其中包含的文件类型。只有类型匹配的文件，才会从CDN网站下载。
+客户端在启用CDN更新后，会从CDN网站获取`filetypes`（地址形如`http://cdn.kingdee.com/easwebcache/filetypes`）并解析其中包含的文件类型。只有类型匹配的文件，才会从CDN网站下载。
 <br/>
