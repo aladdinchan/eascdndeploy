@@ -45,19 +45,19 @@ Linux：需要GNU awk 3+ 版本。<br/>
 <br/>
 
 ## 示例
-1. 提取EAS补丁PT1000268.zip中的EAS客户端文件并部署到`/home/eascdn`目录下的`easwebcache`子目录中。
+1. 提取EAS补丁PT1000268.zip中的EAS客户端文件并部署到`/home/eascdn`目录下的`easwebcache`子目录中。<br/>
 ```bash
 ./eascdndeploy.sh -c /home/eascdn PT1000268.zip
 ```
-2. 提取当前目录下所有PT开头的.zip中的EAS客户端文件并部署，-v 输出详细执行信息。
+2. 提取当前目录下所有PT开头的.zip中的EAS客户端文件并部署，-v 输出详细执行信息。<br/>
 ```bash
 ./eascdndeploy.sh -v -c /home/eascdn PT*.zip
 ```
-3. 提取EAS安装目录`/kingdee`中的客户端文件并测试是否需要部署，输出详细执行信息。
+3. 提取EAS安装目录`/kingdee`中的客户端文件并测试是否需要部署，输出详细执行信息。<br/>
 ```bash
 ./eascdndeploy.sh -vt -c /home/eascdn /kingdee
 ```
-4. 提取EAS网站`https://abc.kdeascloud.com`中扩展名为`jar、exe、dll、zip`的客户端文件并部署。
+4. 提取EAS网站`https://abc.kdeascloud.com`中扩展名为`jar、exe、dll、zip`的客户端文件并部署。<br/>
 ```bash
 ./eascdndeploy.sh -f jar,exe,dll,zip -c /home/eascdn https://abc.kdeascloud.com
 ```
@@ -65,15 +65,15 @@ Linux：需要GNU awk 3+ 版本。<br/>
 
 ## 搭建CDN源站
 CDN源站只需要提供静态文件下载服务即可，功能简单，部署也很容易，下面以`nginx`为例，并将`/home/eascdn`路径作为CDN源站的根路径。
-1. 创建目录及`filetypes`文件
+1. 创建目录及`filetypes`文件<br/>
 ```bash
 mkdir -p /home/eascdn/easwebcache
 echo "jar;exe;dll;bat;xml;zip;properties;vmoptions;js;css;png;jpg;ico;gif" > /home/eascdn/easwebcache/filetypes
 ```
 <br/>
 
-2. 增加`nginx`配置文件，提供文件下载服务
-新建配置文件`/etc/nginx/conf.d/eascdn.conf`，并添加如下配置信息。
+2. 增加`nginx`配置文件，提供文件下载服务<br/>
+新建配置文件`/etc/nginx/conf.d/eascdn.conf`，并添加如下配置信息。然后重启`nginx`服务，让配置生效。`service nginx restart` <br/>
 ```conf
 server {
     listen       80;
@@ -87,11 +87,9 @@ server {
     }
 }
 ```
-重启`nginx`服务，让配置生效。<br/>
-`service nginx restart`<br/>
 <br/>
 
-3. 安装脚本及日常部署
+3. 安装脚本及日常部署<br/>
 安装方法见：[安装和运行](#安装和运行) ，部署示例见：[示例](#示例)。
 假定安装到`/home/eascdn`路径下，部署EAS网站`https://abc.kdeascloud.com`中的客户端文件命令如下。
 ```bash
