@@ -1,5 +1,5 @@
 # EAS客户端文件CDN部署脚本
-提取EAS补丁文件、EAS服务器目录、以及EAS网站中的客户端文件，并按照EAS CDN更新所约定的目录及文件格式部署到指定目录。可将部署目录直接发布为CDN源站，或者同步到外部CDN网站上。支持一次传多个参数。<br/>
+提取EAS补丁文件、EAS服务器目录、以及EAS网站中的客户端文件，并按照EAS CDN更新所约定的目录及文件格式部署到指定目录。可将部署目录直接发布为CDN源站，或者同步到外部CDN网站上。<br/>
 <br/>
 
 ## 安装和运行
@@ -12,7 +12,7 @@ chmod +x eascdndeploy.sh
 <br/>
 
 ## 环境要求
-要求BASH 4+版本，并依赖若干命令和工具，参见后面的说明。<br/>
+要求bash 4+版本，并依赖若干命令和工具，参见后面的说明。<br/>
 在CentOS 6/7/8、macOS 11.1中验证通过。<br/>
 <br/>
 macOS自带的bash版本如果较低，可通过`brew`安装新版本：<br/>
@@ -29,6 +29,8 @@ brew install bash
 
 ## 用法及参数
 ./eascdndeploy.sh&emsp;[选项]&emsp;{补丁文件&nbsp;|&nbsp;EAS目录&nbsp;|&nbsp;EAS网站}<br/>
+<br/>
+支持一次传多个参数。<br/>
 <br/>
 这个脚本会用到如下命令或工具，如果缺少将不能正常工作。<br/>
 md5sum 或 openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, rm, cp 等。<br/>
@@ -63,14 +65,14 @@ Linux：需要GNU awk 3+ 版本。<br/>
 
 ## 搭建CDN源站
 CDN源站只需要提供静态文件下载服务即可，功能简单，部署也很容易，下面以`nginx`为例，并将`/home/eascdn`路径作为CDN源站的根路径。
-### 1. 创建目录及`filetypes`文件
+1. 创建目录及`filetypes`文件
 ```bash
 mkdir -p /home/eascdn/easwebcache
 echo "jar;exe;dll;bat;xml;zip;properties;vmoptions;js;css;png;jpg;ico;gif" > /home/eascdn/easwebcache/filetypes
 ```
 <br/>
 
-### 2. 增加`nginx`配置文件，提供文件下载服务
+2. 增加`nginx`配置文件，提供文件下载服务
 新建配置文件`/etc/nginx/conf.d/eascdn.conf`，并添加如下配置信息。
 ```conf
 server {
@@ -89,7 +91,7 @@ server {
 `service nginx restart`<br/>
 <br/>
 
-### 3. 安装脚本及日常部署
+3. 安装脚本及日常部署
 安装方法见：[安装和运行](#安装和运行) ，部署示例见：[示例](#示例)。
 假定安装到`/home/eascdn`路径下，部署EAS网站`https://abc.kdeascloud.com`中的客户端文件命令如下。
 ```bash
