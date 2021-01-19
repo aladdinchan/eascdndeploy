@@ -94,7 +94,17 @@ server {
 假定安装到`/home/eascdn`路径下，部署EAS网站`https://abc.kdeascloud.com`中的客户端文件命令如下。
 ```bash
 cd /home/eascdn
-./eascdndeploy.sh -c . http://abc.kdeascloud.com
+./eascdndeploy.sh -c . https://abc.kdeascloud.com
+```
+<br/>
+
+4. 实用单行脚本<br/>
+```bash
+cd /home/eascdn
+#找出所有文件名与其MD5值不一致的那些文件，这些文件应该被删除。脚本执行中断或磁盘空间不足可能引发这种情况。
+find easwebcache/*/ -type f -name "`printf "%0.s[a-f0-9]" {1..32}`" | xargs md5sum | awk '! index($2,$1)'
+#找出180天内没有被访问（下载）过的文件，并列出文件及最后访问时间。如果空间占用过大，考虑清理这些文件。
+find easwebcache/*/ -type f -atime +180 -name "`printf "%0.s[a-f0-9]" {1..32}`" -exec ls -lu {} \;
 ```
 <br/>
 
