@@ -29,11 +29,12 @@ Examples:
 ./eascdndeploy.sh -f jar,exe,dll -c /var/www/cdnroot https://abc.kdeascloud.com
 
 This script uses the following commands to complete the work. 
-md5sum or openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, rm, cp, etc.
+md5sum or openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, rm, cp, touch, etc.
 
 Options:
   -c DIR    CDN root directory.  It must has easwebcache subdirectory.
   -f TYPES  File types to deploy, comma separated. default is '*' for all types.
+  -a        Update access time of file if already deployed.
   -t        Test deploy and exit.
   -v        Verbose output.
   -h        Display help and exit.
@@ -42,17 +43,22 @@ Options:
 
 #输出统计信息
 function printsummary(){
+    echo -e "Summary for $ARG :\n  \e[92m$COUNT_FILES_PROCESSED\e[0m file(s) have been processed, "
     if [ "$TEST" = "1" ] ; then
-       echo -e "Summary for $ARG :\n\
-  \e[92m$COUNT_FILES_PROCESSED\e[0m file(s) were processed,  
-  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) will be ignored, 
-  \e[92m$COUNT_FILES_TODEPLOY\e[0m file(s) will be deployed.\n"
+        if [ "$TOUCH" = "1" ] ; then
+            echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) access time will be updated, "
+        else
+           echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) will be ignored, "
+        fi
+        echo -e "  \e[94m$COUNT_FILES_TODEPLOY\e[0m file(s) will be deployed. \n"
     else
-       echo -e "Summary for $ARG :\n\
-  \e[92m$COUNT_FILES_PROCESSED\e[0m file(s) were processed,  
-  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) were ignored, 
-  \e[92m$COUNT_FILES_TODEPLOY\e[0m file(s) were deployed, 
-  \e[91m$COUNT_FILES_FAILED\e[0m file(s) were failed.\n"
+        if [ "$TOUCH" = "1" ] ; then
+            echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) access time have been updated, "
+        else
+           echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) have been ignored, "
+        fi
+        echo -e "  \e[94m$COUNT_FILES_TODEPLOY\e[0m file(s) have been deployed, "
+        echo -e "  \e[91m$COUNT_FILES_FAILED\e[0m file(s) have been failed. \n"
     fi
 }
 
@@ -151,7 +157,27 @@ function deploydirectory(){
         if [ -f "$CDN_FILE_NAME" ] ; then
             #文件已存在，跳过
             let COUNT_FILES_DEPLOYED++
-            if [ "$VERBOSE" = "1" ] ; then echo -e "File \"$FILE_NAME\" already deployed, ... \e[94mignored.\e[0m" ; fi
+
+            if [ "$TOUCH" = "1" ] ; then
+                #更新文件最后访问时间
+                echo -ne "File \"$FILE_NAME\" already deployed, ..."
+                if [ "$TEST" = "1" ] ; then
+                    echo -e "\e[94m access time will be updated.\e[0m" ;
+                else
+                    #非测试模式才真正更新
+                    touch -ac "$CDN_FILE_NAME"
+                    echo -e "\e[94m access time updated.\e[0m" ; 
+                fi
+            elif [ "$VERBOSE" = "1" ] ; then 
+                echo -ne "File \"$FILE_NAME\" already deployed, ..."
+                if [ "$TEST" = "1" ] ; then
+                    #测试模式
+                    echo -e "\e[94m will be ignored.\e[0m" ; 
+                else
+                    #忽略已部署文件
+                    echo -e "\e[94m ignored.\e[0m" ; 
+                fi
+            fi
         else
             #未部署过的新文件，复制到CDN路径
             let COUNT_FILES_TODEPLOY++
@@ -241,7 +267,27 @@ function deployeaswebsite(){
         if [ -f "$CDN_FILE_NAME" ] ; then
             #文件已存在，跳过
             let COUNT_FILES_DEPLOYED++
-            if [ "$VERBOSE" = "1" ] ; then echo -e "File \"$FILE_NAME\" already deployed, ... \e[94mignored.\e[0m" ; fi
+
+            if [ "$TOUCH" = "1" ] ; then
+                #更新文件最后访问时间
+                echo -ne "File \"$FILE_NAME\" already deployed, ..."
+                if [ "$TEST" = "1" ] ; then
+                    echo -e "\e[94m access time will be updated.\e[0m" ;
+                else
+                    #非测试模式才真正更新
+                    touch -ac "$CDN_FILE_NAME"
+                    echo -e "\e[94m access time updated.\e[0m" ; 
+                fi
+            elif [ "$VERBOSE" = "1" ] ; then 
+                echo -ne "File \"$FILE_NAME\" already deployed, ..."
+                if [ "$TEST" = "1" ] ; then
+                    #测试模式
+                    echo -e "\e[94m will be ignored.\e[0m" ; 
+                else
+                    #忽略已部署文件
+                    echo -e "\e[94m ignored.\e[0m" ; 
+                fi
+            fi
         elif [ "$TEST" = "1" ] ; then
             # -t 测试模式
             let COUNT_FILES_TODEPLOY++
@@ -295,11 +341,12 @@ function deployeaswebsite(){
 }
 
 #解析所有命令行选项
-while getopts :c:f:tvh opt
+while getopts :c:f:atvh opt
 do
     case $opt in
         c) CDN_ROOTDIR=$OPTARG ;;
         f) FILETYPES=$OPTARG ;;
+        a) TOUCH=1 ;;
         t) TEST=1 ;;
         v) VERBOSE=1 ;;
         h)

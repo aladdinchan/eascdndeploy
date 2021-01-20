@@ -33,13 +33,14 @@ brew install bash
 支持一次传多个参数。<br/>
 <br/>
 这个脚本会用到如下命令或工具，如果缺少将不能正常工作。<br/>
-md5sum 或 openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, rm, cp 等。<br/>
+md5sum 或 openssl, curl, mktemp, unzip, awk, sed, find, xargs, tr, sort, uniq, rm, cp, touch 等。<br/>
 Linux：需要GNU awk 3+ 版本。<br/>
 |选项|说明|
 |:----|:--------|
 |-c DIR|CDN根目录。其必须有easwebcache子目录，文件将部署到该子目录下。|
 |-f TYPES|要部署的文件类型，默认为`'*'`部署所有类型的文件。|
 |-t|测试模式。不实际部署文件，可用于检查会有多少文件将会部署。|
+|-a|更新已部署文件的最后访问时间。|
 |-v|输出详细信息。|
 |-h|显示命令帮助。|
 <br/>
@@ -57,7 +58,11 @@ Linux：需要GNU awk 3+ 版本。<br/>
 ```bash
 ./eascdndeploy.sh -vt -c /home/eascdn /kingdee
 ```
-4. 提取EAS网站`https://abc.kdeascloud.com`中扩展名为`jar、exe、dll、zip`的客户端文件并部署。<br/>
+4. 提取EAS网站`https://abc.kdeascloud.com`中的客户端文件并部署，已部署的文件更新其最后访问时间。<br/>
+```bash
+./eascdndeploy.sh -a -c /home/eascdn https://abc.kdeascloud.com
+```
+5. 提取EAS网站`https://abc.kdeascloud.com`中扩展名为`jar、exe、dll、zip`的客户端文件并部署。<br/>
 ```bash
 ./eascdndeploy.sh -f jar,exe,dll,zip -c /home/eascdn https://abc.kdeascloud.com
 ```
@@ -82,7 +87,7 @@ server {
     # 路径：/home/eascdn/easwebcache
     location /easwebcache {
         root /home/eascdn;
-        autoindex on;  # 若不希望浏览器可遍历文件，删除此行
+        #autoindex on;  # 若希望浏览器可遍历文件，请去掉注释
         charset utf-8;
     }
 }
@@ -101,8 +106,10 @@ cd /home/eascdn
 4. 实用单行脚本<br/>
 ```bash
 cd /home/eascdn
-#找出所有文件名与其MD5值不一致的那些文件，这些文件应该被删除。脚本执行中断或磁盘空间不足可能引发这种情况。
+
+#找出所有文件名与其MD5值不一致的那些文件，这些文件必须被删除。脚本执行中断或磁盘空间不足可能引发这种情况。
 find easwebcache/*/ -type f -name "`printf "%0.s[a-f0-9]" {1..32}`" | xargs md5sum | awk '! index($2,$1)'
+
 #找出180天内没有被访问（下载）过的文件，并列出文件及最后访问时间。如果空间占用过大，考虑清理这些文件。
 find easwebcache/*/ -type f -atime +180 -name "`printf "%0.s[a-f0-9]" {1..32}`" -exec ls -lu {} \;
 ```
