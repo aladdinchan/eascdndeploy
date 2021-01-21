@@ -107,11 +107,17 @@ cd /home/eascdn
 ```bash
 cd /home/eascdn
 
-#找出所有文件名与其MD5值不一致的那些文件，这些文件必须被删除。脚本执行中断或磁盘空间不足可能引发这种情况。
-find easwebcache/*/ -type f -name "`printf "%0.s[a-f0-9]" {1..32}`" | xargs md5sum | awk '! index($2,$1)'
+#找出所有文件名与其MD5值不一致的那些文件（必须删除），-name参数限定文件名必须是MD5值。脚本执行中断或磁盘空间不足可能引发这种情况。
+find easwebcache/*/ -type f -name "`printf "%0.s[a-f0-9]" {1..32}`" -exec md5sum {} \; | awk '! index($2,$1)'
 
 #找出180天内没有被访问（下载）过的文件，并列出文件及最后访问时间。如果空间占用过大，考虑清理这些文件。
+#两者差异：前者每找到一个文件就执行命令，后者会找到多个文件后分批传递给ls -lu。 后者输出格式更友好。
 find easwebcache/*/ -type f -atime +180 -name "`printf "%0.s[a-f0-9]" {1..32}`" -exec ls -lu {} \;
+find easwebcache/*/ -type f -atime +180 -name "`printf "%0.s[a-f0-9]" {1..32}`" -exec ls -lu {} +
+
+#根据文件数量对目录进行排序，列出最多的10个目录，数量过多的话需要分析原因并考虑清理。（macOS不支持 -printf）
+find easwebcache/*/ -type f -printf '%h\n' | uniq -c | sort -nr | head -n 10
+find easwebcache/*/ -type f | sed 's/\/[^/]*$//g' | uniq -c | sort -nr | head -n 10
 ```
 <br/>
 
@@ -144,7 +150,7 @@ find easwebcache/*/ -type f -atime +180 -name "`printf "%0.s[a-f0-9]" {1..32}`" 
 例：客户端文件 `eas/client/lib/common/bos/bosframework.jar` <br/> 
 
 若从服务器下载，地址为：<br/>
-`http://\${SERVER_NAME}/easWebClient/lib/common/bos/bosframework.jar` <br/>
+`http://${SERVER_NAME}/easWebClient/lib/common/bos/bosframework.jar` <br/>
 若从前面配置的CDN网站下载，地址则为：<br/>
 `http://cdn.kingdee.com/easwebcache/lib/common/bos/bosframework.jar/aa52ec0ad5d1ffb5487c265eefa3554d` <br/>
 <br/>
