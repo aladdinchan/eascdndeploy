@@ -50,14 +50,14 @@ function printsummary(){
         else
            echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) will be ignored, "
         fi
-        echo -e "  \e[94m$COUNT_FILES_TODEPLOY\e[0m file(s) will be deployed. \n"
+        echo -e "  \e[92m$COUNT_FILES_TODEPLOY\e[0m file(s) will be deployed. \n"
     else
         if [ "$TOUCH" = "1" ] ; then
             echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) access time have been updated, "
         else
            echo -e "  \e[94m$COUNT_FILES_DEPLOYED\e[0m file(s) have been ignored, "
         fi
-        echo -e "  \e[94m$COUNT_FILES_TODEPLOY\e[0m file(s) have been deployed, "
+        echo -e "  \e[92m$COUNT_FILES_TODEPLOY\e[0m file(s) have been deployed, "
         echo -e "  \e[91m$COUNT_FILES_FAILED\e[0m file(s) have been failed. \n"
     fi
 }
