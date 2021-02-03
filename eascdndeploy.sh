@@ -205,9 +205,13 @@ function deployeaswebsite(){
 
     #测试EAS网站能否正常访问.
     echo -e "Testing eas web site: $EAS_WEBSITE ..."
-    curl -s $EAS_WEBSITE/easupdater/JnlpVersion > /dev/null
+    CURL_RESULTS=$(curl -sS -L --write-out "%{http_code}" -o /dev/null $EAS_WEBSITE/easupdater/JnlpVersion 2>&1)
     if [ $? -ne 0 ] ; then
-        echo -e "\e[91mCan not access eas web site.\e[0m\n"
+        ERROR_MSG=$(echo -e "$CURL_RESULTS" | head -n 1)
+        echo -e "\e[91mCan not access eas web site. $ERROR_MSG \e[0m\n"
+        return
+    elif [ "$CURL_RESULTS" != "200" ] ; then
+        echo -e "\e[91mCan not access eas web site, http code: $CURL_RESULTS\e[0m\n"
         return
     fi
 
