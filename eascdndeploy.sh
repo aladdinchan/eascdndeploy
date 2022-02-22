@@ -215,7 +215,7 @@ function deployeaswebsite(){
         return
     fi
 
-    #生成文件名过滤参数形如: /\.jar'[[:space:]]/ && /\.exe'[[:space:]]/ && /\.dll'[[:space:]]/。
+    #生成文件名过滤参数形如: /\.jar'[[:space:]]/ || /\.exe'[[:space:]]/ || /\.dll'[[:space:]]/。
     FILENAME_FILTER_AWK=$(echo "$FILETYPES" | tr ',' '\n' | xargs -I {} echo -n " /\.{}'[[:space:]]/ ||")
     #截掉最后多出了的 || 。 注：bash 4.1.x不支持这样的语法："${FILENAME_FILTER_AWK::-2}"
     FILENAME_FILTER_AWK="${FILENAME_FILTER_AWK::${#FILENAME_FILTER_AWK}-2}"
@@ -406,6 +406,7 @@ COUNT_TASKS_RAN=0
 shift $((OPTIND-1))
 
 #输出参数信息
+echo "Date: `date`"
 echo -e "CDN root directory: \"$CDN_ROOTDIR\". \nFile type(s): \"$FILETYPES\""
 if [ "$TEST" = "1" ] ; then echo -e "Test mode." ; fi
 if [ "$VERBOSE" = "1" ] ; then echo -e "Verbose output." ; fi
